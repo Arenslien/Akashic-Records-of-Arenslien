@@ -14,7 +14,7 @@ export default function StarryBackground() {
     canvas.height = window.innerHeight;
 
     // 별 데이터 생성
-    const stars = Array.from({ length: 100 }, () => ({
+    let stars = Array.from({ length: 100 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
       radius: Math.random() * 2,
@@ -42,6 +42,30 @@ export default function StarryBackground() {
 
     // 브라우저 크기 변경 시 Canvas 크기 조정
     const handleResize = () => {
+      if (window.innerWidth > canvas.width) {
+        let newStars = Array.from({ length: 50 }, () => ({
+          x: Math.random() * (window.innerWidth-canvas.width) + canvas.width,
+          y: Math.random() * window.innerHeight,
+          radius: Math.random() * 2,
+          speed: Math.random() * 0.5 + 0.1,
+        }));
+
+        console.log(newStars);
+        for (let i=0; i<newStars.length; i++) {
+          stars.push(newStars[i]);
+        }
+      }
+      else {
+        let tempStars = [];
+        for (let i=0; i<stars.length; i++) {
+          if (stars[i].x < window.innerWidth) {
+            tempStars.push(stars[i]);
+          }
+        }
+
+        stars = tempStars;
+      }
+
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
