@@ -50,8 +50,69 @@ export default function Home() {
     const stars = new THREE.Points(starGeometry, starMaterial);
     scene.add(stars);
 
+    // 성운(네뷸라) Shader 추가
+    const nebulaMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0.0 },
+        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight)},
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform float time;
+        varying vec2 vUv;
+
+        // Simple 2D noise function
+        float noise(vec2 p) {
+          return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        // Fractal Brownian Motion (FBM) for a more cloudy look
+        float fbm(vec2 p) {
+          float value = 0.0;
+          float amplitude = 0.5;
+          float frequency = 1.0;
+          for (int i = 0; i < 5; i++) {
+            value += amplitude * noise(p * frequency);
+            frequency *= 2.0;
+            amplitude *= 0.5;
+          }
+          return value;
+        }
+
+
+        void main() {
+          vec2 uv = vUv * 3.0; // 확대 효과
+          float nebula = fbm(uv + time * 0.1); // 움직이는 효과
+
+          // 보라색 성운 컬러 (파랑 + 보라 조합)
+          vec3 color = mix(vec3(0.2, 0.0, 0.5), vec3(0.6, 0.2, 1.0), nebula);
+
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      transparent: true
+    });
+
+    // 평면 (Plane)에 성운 Shader 적용
+    const nebulaGeometry = new THREE.PlaneGeometry(5000, 5000);
+    const nebula = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
+    scene.add(nebula)
+
+    const nebula2 = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
+    nebula2.position.set(1000, 1000, -1500); // 다른 위치에 배치
+    scene.add(nebula2);
+
+
     // 카메라 위치 설정
     camera.position.z = 500;
+    nebula.position.z = -500;
 
     // 애니메이션 및 렌더링
     function animate() {
@@ -59,6 +120,8 @@ export default function Home() {
 
       stars.rotation.x += 0.001;
       stars.rotation.y += 0.001;
+
+      nebulaMaterial.uniforms.time.value += 0.01 // 시간 업데이트 (움직임 효과)
 
       renderer.render(scene, camera);
     }
